@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Total Sales — Editable Chart Card</title>
+<style>
+  :root{
+    --blue: #1c93e3;
+    --blue-soft: #a9d6f2;
+    --blue-fill-top: rgba(28,147,227,0.16);
+    --blue-fill-bottom: rgba(28,147,227,0.0);
+    --green: #1a7f37;
+    --red: #d1242f;
+    --ink: #1f2430;
+    --sub: #6b7280;
+    --line: #e8eaee;
+    --card-bg: #ffffff;
+    --page-bg: #eef1f5;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--page-bg);
+    font-family: "Inter","Helvetica Neue",Arial,sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    padding:40px 16px;
+  }
+
+  .page-hint{
+    max-width:520px;
+    text-align:center;
+    font-size:13px;
+    color:#8a92a1;
+    line-height:1.5;
+  }
+
+  /* ---------- CARD ---------- */
+  .card{
+    width:100%;
+    max-width:520px;
+    background:var(--card-bg);
+    border-radius:20px;
+    box-shadow:0 1px 2px rgba(20,20,43,.04), 0 10px 30px rgba(20,20,43,.06);
+    padding:22px 24px 18px;
+  }
+  .card-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .editable{
+    border-radius:5px;
+    outline:none;
+    padding:1px 4px;
+    margin:-1px -4px;
+    cursor:text;
+  }
+  .editable:hover{ background:#f4f7fa; }
+  .editable:focus{ background:#eaf4fc; box-shadow:0 0 0 2px var(--blue-soft); }
+  .card-header .title{
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .dots{
+    flex:1;
+    height:0;
+    border-bottom:2px dotted #d7dbe2;
+    margin-top:2px;
+  }
+  .icon-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:26px;height:26px;
+    border-radius:8px;
+    color:#9aa2af;
+    flex-shrink:0;
+  }
+
+  .stat{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:8px;
+    flex-wrap:wrap;
+  }
+  .big-number{
+    font-size:38px;
+    font-weight:800;
+    letter-spacing:-0.5px;
+    color:var(--ink);
+  }
+  .change{
+    font-size:16px;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    gap:2px;
+    cursor:pointer;
+    user-select:none;
+    border-radius:6px;
+    padding:2px 6px;
+    margin-left:-6px;
+  }
+  .change:hover{ background:#f4f7fa; }
+  .change.up{color:var(--green);}
+  .change.down{color:var(--red);}
+  .change .stepper{
+    display:none;
+    align-items:center;
+    gap:4px;
+    font-size:13px;
+    margin-left:4px;
+  }
+  .change.editing .stepper{ display:inline-flex; }
+  .change .stepper button{
+    width:20px;height:20px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:5px;
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    color:var(--ink);
+  }
+
+  .chart-wrap{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    position:relative;
+  }
+  .y-axis{
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--sub);
+    padding:2px 0 0;
+    width:34px;
+    text-align:left;
+  }
+  .chart-area{
+    flex:1;
+    position:relative;
+  }
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .gridline{stroke:var(--line); stroke-width:1;}
+  .handle{cursor:ns-resize; touch-action:none;}
+
+  .drag-tip{
+    position:absolute;
+    pointer-events:none;
+    background:var(--ink);
+    color:#fff;
+    font-size:11px;
+    font-weight:600;
+    padding:3px 7px;
+    border-radius:6px;
+    transform:translate(-50%,-130%);
+    white-space:nowrap;
+    display:none;
+    z-index:5;
+  }
+
+  .x-axis{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--sub);
+    padding-left:42px;
+    margin-top:6px;
+  }
+
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    justify-content:center;
+    margin-top:16px;
+    font-size:13px;
+    color:var(--ink);
+    flex-wrap:wrap;
+  }
+  .legend .seg{display:flex;align-items:center;gap:6px;}
+  .swatch{width:18px;height:0;border-top:3px solid var(--blue);border-radius:2px;}
+  .swatch.dotted{border-top:3px dotted var(--blue-soft);}
+
+  .chart-controls{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .pill-btn{
+    background:#f4f6f8;
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-size:12px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  .pill-btn:hover{ background:#eaeef2; }
+
+  /* ---------- SETTINGS ---------- */
+  .toggle-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    padding:10px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .toggle-btn:hover{opacity:.9;}
+
+  .panel{
+    width:100%;
+    max-width:520px;
+    background:var(--card-bg);
+    border-radius:16px;
+    box-shadow:0 1px 2px rgba(20,20,43,.04), 0 10px 30px rgba(20,20,43,.06);
+    padding:20px 22px;
+    display:none;
+  }
+  .panel.open{display:block;}
+  .panel h3{
+    margin:0 0 4px;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .panel .sub{
+    font-size:12.5px;
+    color:var(--sub);
+    margin:0 0 16px;
+    line-height:1.5;
+  }
+  .scale-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .scale-row button{
+    background:#f4f6f8;
+    border:1px solid var(--line);
+    padding:7px 12px;
+    border-radius:8px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .scale-row button.active{
+    background:var(--blue);
+    border-color:var(--blue);
+    color:#fff;
+  }
+  details{
+    margin-top:14px;
+    border-top:1px dashed var(--line);
+    padding-top:12px;
+  }
+  summary{
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    color:var(--sub);
+  }
+  .field{ margin:12px 0; }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--sub);
+    margin-bottom:5px;
+  }
+  .field input[type="text"], .field textarea{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:13px;
+    font-family:inherit;
+    color:var(--ink);
+    background:#fafbfc;
+  }
+  .field textarea{resize:vertical;min-height:44px;}
+  .panel-actions{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .btn-secondary{
+    background:#f1f3f6;
+    color:var(--ink);
+    border:none;
+    padding:9px 14px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    padding:9px 14px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+  <p class="page-hint">Click any text on the card to edit it. Drag points on the chart to reshape either line.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="title editable" id="titleText" contenteditable="true">Total sales</span>
+      <span class="dots"></span>
+      <span class="icon-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M7 9h6M7 13h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="17" cy="17" r="4" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M20 20l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+    </div>
+
+    <div class="stat">
+      <span class="big-number editable" id="bigNumber" contenteditable="true">$250,000</span>
+      <span class="change up" id="changeLabel">
+        <span id="changeText">↗ 42%</span>
+        <span class="stepper">
+          <button type="button" id="pctDown">−</button>
+          <button type="button" id="pctUp">+</button>
+          <button type="button" id="pctDone">✓</button>
+        </span>
+      </span>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="y-axis" id="yAxis">
+        <span id="yMaxLabel">$10K</span>
+        <span id="yMidLabel">$5K</span>
+        <span>$0K</span>
+      </div>
+      <div class="chart-area">
+        <svg id="chartSvg" viewBox="0 0 600 240" preserveAspectRatio="none"></svg>
+        <div class="drag-tip" id="dragTip"></div>
+      </div>
+    </div>
+
+    <div class="x-axis" id="xAxis"></div>
+
+    <div class="legend">
+      <span class="seg"><span class="swatch"></span><span class="editable" id="currentRangeLabel" contenteditable="true">Jun 6–Jul 5, 2023</span></span>
+      <span class="seg"><span class="swatch dotted"></span><span class="editable" id="previousRangeLabel" contenteditable="true">May 7–Jun 5, 2023</span></span>
+    </div>
+
+    <div class="chart-controls">
+      <button class="pill-btn" id="addPointBtn">＋ Add point</button>
+      <button class="pill-btn" id="removePointBtn">－ Remove point</button>
+      <button class="pill-btn" id="smoothBtn">🎲 Randomize shape</button>
+    </div>
+  </div>
+
+  <button class="toggle-btn" id="toggleSettings">⚙ More options</button>
+
+  <div class="panel" id="settingsPanel">
+    <h3>Chart scale</h3>
+    <p class="sub">Sets the $ value the top gridline represents.</p>
+    <div class="scale-row" id="scaleRow">
+      <button data-val="2000">$2K</button>
+      <button data-val="5000">$5K</button>
+      <button data-val="10000" class="active">$10K</button>
+      <button data-val="25000">$25K</button>
+      <button data-val="50000">$50K</button>
+      <button data-val="100000">$100K</button>
+    </div>
+
+    <details>
+      <summary>Advanced: type exact values</summary>
+      <div class="field">
+        <label>X-axis tick labels (comma-separated)</label>
+        <input type="text" id="inXLabels" value="Jun 6, Jun 14, Jun 22, Jul 5">
+      </div>
+      <div class="field">
+        <label>Current period data points (solid line)</label>
+        <textarea id="inCurrentData">6700, 4600, 8900, 9200, 8600, 4900, 3000, 6200, 4900, 3200, 7100, 3200, 7900, 7600, 6000</textarea>
+      </div>
+      <div class="field">
+        <label>Previous period data points (dotted line)</label>
+        <textarea id="inPreviousData">4200, 3900, 4300, 4700, 4900, 4300, 3700, 3300, 2800, 3200, 4100, 3300, 5200, 9600, 8300</textarea>
+      </div>
+      <div class="panel-actions">
+        <button class="btn-primary" id="applyBtn">Apply text fields</button>
+      </div>
+    </details>
+
+    <div class="panel-actions">
+      <button class="btn-secondary" id="resetBtn">Reset everything to default</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const W = 600, H = 240;
+
+  const defaults = {
+    yMax: 10000,
+    xLabels: ["Jun 6","Jun 14","Jun 22","Jul 5"],
+    currentData: [6700, 4600, 8900, 9200, 8600, 4900, 3000, 6200, 4900, 3200, 7100, 3200, 7900, 7600, 6000],
+    previousData: [4200, 3900, 4300, 4700, 4900, 4300, 3700, 3300, 2800, 3200, 4100, 3300, 5200, 9600, 8300]
+  };
+
+  let state = JSON.parse(JSON.stringify(defaults));
+  let changePct = 42;
+
+  const svg = document.getElementById('chartSvg');
+  const xAxisEl = document.getElementById('xAxis');
+  const dragTip = document.getElementById('dragTip');
+  const chartArea = document.querySelector('.chart-area');
+
+  function parseNums(str){
+    return str.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
+  }
+
+  function smoothPath(coords){
+    if(coords.length < 2) return '';
+    let d = `M ${coords[0].x},${coords[0].y}`;
+    for(let i=0;i<coords.length-1;i++){
+      const p0 = coords[i-1] || coords[i];
+      const p1 = coords[i];
+      const p2 = coords[i+1];
+      const p3 = coords[i+2] || p2;
+      const c1x = p1.x + (p2.x - p0.x)/6;
+      const c1y = p1.y + (p2.y - p0.y)/6;
+      const c2x = p2.x - (p3.x - p1.x)/6;
+      const c2y = p2.y - (p3.y - p1.y)/6;
+      d += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`;
+    }
+    return d;
+  }
+
+  function toCoords(data){
+    const n = data.length;
+    return data.map((v,i)=>({
+      x: n===1 ? W/2 : (i*(W/(n-1))),
+      y: H - Math.max(0, Math.min(1, v/state.yMax)) * H,
+      v: v
+    }));
+  }
+
+  function fmtMoney(v){
+    return '$' + Math.round(v).toLocaleString();
+  }
+
+  function render(){
+    const up = changePct >= 0;
+    document.getElementById('changeText').textContent = (up ? '↗ ' : '↘ ') + Math.abs(changePct) + '%';
+    document.getElementById('changeLabel').className = 'change ' + (up ? 'up' : 'down');
+
+    document.getElementById('yMaxLabel').textContent = '$' + Math.round(state.yMax/1000) + 'K';
+    document.getElementById('yMidLabel').textContent = '$' + Math.round(state.yMax/2000) + 'K';
+
+    xAxisEl.innerHTML = '';
+    state.xLabels.forEach(l=>{
+      const span = document.createElement('span');
+      span.textContent = l;
+      xAxisEl.appendChild(span);
+    });
+
+    const curCoords = toCoords(state.currentData);
+    const prevCoords = toCoords(state.previousData);
+    const curPath = smoothPath(curCoords);
+    const prevPath = smoothPath(prevCoords);
+    const areaPath = curPath + ` L ${curCoords[curCoords.length-1].x},${H} L ${curCoords[0].x},${H} Z`;
+
+    let svgContent = `
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--blue-fill-top)"/>
+          <stop offset="100%" stop-color="var(--blue-fill-bottom)"/>
+        </linearGradient>
+      </defs>
+      <line class="gridline" x1="0" y1="${H}" x2="${W}" y2="${H}"></line>
+      <line class="gridline" x1="0" y1="${H/2}" x2="${W}" y2="${H/2}"></line>
+      <line class="gridline" x1="0" y1="0" x2="${W}" y2="0"></line>
+      <path d="${areaPath}" fill="url(#areaGrad)" stroke="none"></path>
+      <path d="${prevPath}" fill="none" stroke="var(--blue-soft)" stroke-width="2.5" stroke-dasharray="1 7" stroke-linecap="round"></path>
+      <path d="${curPath}" fill="none" stroke="var(--blue)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path>
+    `;
+
+    prevCoords.forEach((c,i)=>{
+      svgContent += `<g class="handle" data-series="previous" data-index="${i}">
+          <circle cx="${c.x}" cy="${c.y}" r="9" fill="transparent"></circle>
+          <circle cx="${c.x}" cy="${c.y}" r="3.5" fill="var(--blue-soft)" opacity="0.9"></circle>
+        </g>`;
+    });
+    curCoords.forEach((c,i)=>{
+      svgContent += `<g class="handle" data-series="current" data-index="${i}">
+          <circle cx="${c.x}" cy="${c.y}" r="9" fill="transparent"></circle>
+          <circle cx="${c.x}" cy="${c.y}" r="4" fill="var(--blue)"></circle>
+        </g>`;
+    });
+
+    svg.innerHTML = svgContent;
+    attachDrag();
+  }
+
+  function attachDrag(){
+    const handles = svg.querySelectorAll('.handle');
+    handles.forEach(handle=>{
+      const idx = parseInt(handle.getAttribute('data-index'));
+      const series = handle.getAttribute('data-series');
+      const arr = series === 'current' ? state.currentData : state.previousData;
+
+      function startDrag(e){
+        e.preventDefault();
+        function move(ev){
+          const pt = svg.createSVGPoint();
+          const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+          pt.x = clientX; pt.y = clientY;
+          const ctm = svg.getScreenCTM().inverse();
+          const svgP = pt.matrixTransform(ctm);
+          let ratio = 1 - (svgP.y / H);
+          ratio = Math.max(0, Math.min(1, ratio));
+          const value = Math.round(ratio * state.yMax / 50) * 50;
+          arr[idx] = value;
+
+          const areaRect = chartArea.getBoundingClientRect();
+          dragTip.style.display = 'block';
+          dragTip.style.left = (clientX - areaRect.left) + 'px';
+          dragTip.style.top = (clientY - areaRect.top) + 'px';
+          dragTip.textContent = fmtMoney(value);
+
+          render();
+          document.getElementById('inCurrentData').value = state.currentData.join(', ');
+          document.getElementById('inPreviousData').value = state.previousData.join(', ');
+        }
+        function up(){
+          dragTip.style.display = 'none';
+          window.removeEventListener('mousemove', move);
+          window.removeEventListener('mouseup', up);
+          window.removeEventListener('touchmove', move);
+          window.removeEventListener('touchend', up);
+        }
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+        window.addEventListener('touchmove', move, {passive:false});
+        window.addEventListener('touchend', up);
+      }
+      handle.addEventListener('mousedown', startDrag);
+      handle.addEventListener('touchstart', startDrag, {passive:false});
+    });
+  }
+
+  // ---- Inline contenteditable fields (title, big number, range labels) ----
+  ['titleText','bigNumber','currentRangeLabel','previousRangeLabel'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){ e.preventDefault(); el.blur(); }
+    });
+  });
+
+  // ---- % change stepper ----
+  const changeLabelEl = document.getElementById('changeLabel');
+  changeLabelEl.addEventListener('click', (e)=>{
+    if(e.target.closest('.stepper')) return;
+    changeLabelEl.classList.add('editing');
+  });
+  document.getElementById('pctUp').addEventListener('click', (e)=>{ e.stopPropagation(); changePct += 1; render(); });
+  document.getElementById('pctDown').addEventListener('click', (e)=>{ e.stopPropagation(); changePct -= 1; render(); });
+  document.getElementById('pctDone').addEventListener('click', (e)=>{ e.stopPropagation(); changeLabelEl.classList.remove('editing'); });
+
+  // ---- Scale presets ----
+  document.getElementById('scaleRow').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    document.querySelectorAll('#scaleRow button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.yMax = parseFloat(btn.getAttribute('data-val'));
+    render();
+  });
+
+  // ---- Add / remove points ----
+  document.getElementById('addPointBtn').addEventListener('click', ()=>{
+    const avgC = Math.round(state.currentData.reduce((a,b)=>a+b,0) / state.currentData.length);
+    const avgP = Math.round(state.previousData.reduce((a,b)=>a+b,0) / state.previousData.length);
+    state.currentData.push(avgC);
+    state.previousData.push(avgP);
+    syncTextAreas();
+    render();
+  });
+  document.getElementById('removePointBtn').addEventListener('click', ()=>{
+    if(state.currentData.length > 2) state.currentData.pop();
+    if(state.previousData.length > 2) state.previousData.pop();
+    syncTextAreas();
+    render();
+  });
+  document.getElementById('smoothBtn').addEventListener('click', ()=>{
+    state.currentData = state.currentData.map(()=> Math.round((Math.random()*0.8+0.15) * state.yMax / 50) * 50);
+    state.previousData = state.previousData.map(()=> Math.round((Math.random()*0.6+0.1) * state.yMax / 50) * 50);
+    syncTextAreas();
+    render();
+  });
+
+  function syncTextAreas(){
+    document.getElementById('inCurrentData').value = state.currentData.join(', ');
+    document.getElementById('inPreviousData').value = state.previousData.join(', ');
+  }
+
+  // ---- Advanced text apply ----
+  document.getElementById('applyBtn').addEventListener('click', ()=>{
+    const xls = document.getElementById('inXLabels').value.split(',').map(s=>s.trim()).filter(Boolean);
+    state.xLabels = xls.length ? xls : defaults.xLabels;
+    const cd = parseNums(document.getElementById('inCurrentData').value);
+    const pd = parseNums(document.getElementById('inPreviousData').value);
+    state.currentData = cd.length >= 2 ? cd : defaults.currentData;
+    state.previousData = pd.length >= 2 ? pd : defaults.previousData;
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state = JSON.parse(JSON.stringify(defaults));
+    changePct = 42;
+    document.getElementById('titleText').textContent = 'Total sales';
+    document.getElementById('bigNumber').textContent = '$250,000';
+    document.getElementById('currentRangeLabel').textContent = 'Jun 6–Jul 5, 2023';
+    document.getElementById('previousRangeLabel').textContent = 'May 7–Jun 5, 2023';
+    document.querySelectorAll('#scaleRow button').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#scaleRow button[data-val="10000"]').classList.add('active');
+    syncTextAreas();
+    document.getElementById('inXLabels').value = defaults.xLabels.join(', ');
+    render();
+  });
+
+  document.getElementById('toggleSettings').addEventListener('click', ()=>{
+    document.getElementById('settingsPanel').classList.toggle('open');
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
