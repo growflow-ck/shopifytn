@@ -131,6 +131,16 @@
     cursor:pointer;
     color:var(--ink);
   }
+  .change .stepper input{
+    width:56px;
+    padding:3px 6px;
+    border:1px solid var(--blue-soft);
+    border-radius:6px;
+    font-size:13px;
+    font-weight:700;
+    font-family:inherit;
+    color:var(--ink);
+  }
 
   .chart-wrap{
     display:flex;
@@ -348,8 +358,7 @@
       <span class="change up" id="changeLabel">
         <span id="changeText">↗ 42%</span>
         <span class="stepper">
-          <button type="button" id="pctDown">−</button>
-          <button type="button" id="pctUp">+</button>
+          <input type="number" id="pctInput" value="42" step="1">
           <button type="button" id="pctDone">✓</button>
         </span>
       </span>
@@ -371,14 +380,16 @@
 
     <div class="legend">
       <span class="seg"><span class="swatch"></span><span class="editable" id="currentRangeLabel" contenteditable="true">Jun 6–Jul 5, 2023</span></span>
-      <span class="seg"><span class="swatch dotted"></span><span class="editable" id="previousRangeLabel" contenteditable="true">May 7–Jun 5, 2023</span></span>
+      <span class="seg" id="prevLegendSeg"><span class="swatch dotted"></span><span class="editable" id="previousRangeLabel" contenteditable="true">May 7–Jun 5, 2023</span></span>
     </div>
+  </div>
 
-    <div class="chart-controls">
-      <button class="pill-btn" id="addPointBtn">＋ Add point</button>
-      <button class="pill-btn" id="removePointBtn">－ Remove point</button>
-      <button class="pill-btn" id="smoothBtn">🎲 Randomize shape</button>
-    </div>
+  <div class="chart-controls">
+    <button class="pill-btn" id="addPointBtn">＋ Add point</button>
+    <button class="pill-btn" id="removePointBtn">－ Remove point</button>
+    <button class="pill-btn" id="smoothBtn">🎲 Randomize shape</button>
+    <button class="pill-btn" id="hideDotsBtn">👁 Hide points</button>
+    <button class="pill-btn" id="hideLineBtn">📉 Hide second line</button>
   </div>
 
   <button class="toggle-btn" id="toggleSettings">⚙ More options</button>
@@ -432,6 +443,8 @@
 
   let state = JSON.parse(JSON.stringify(defaults));
   let changePct = 42;
+  let dotsHidden = false;
+  let prevLineHidden = false;
 
   const svg = document.getElementById('chartSvg');
   const xAxisEl = document.getElementById('xAxis');
@@ -475,7 +488,9 @@
   function render(){
     const up = changePct >= 0;
     document.getElementById('changeText').textContent = (up ? '↗ ' : '↘ ') + Math.abs(changePct) + '%';
-    document.getElementById('changeLabel').className = 'change ' + (up ? 'up' : 'down');
+    const changeLabelElNow = document.getElementById('changeLabel');
+    const wasEditing = changeLabelElNow.classList.contains('editing');
+    changeLabelElNow.className = 'change ' + (up ? 'up' : 'down') + (wasEditing ? ' editing' : '');
 
     document.getElementById('yMaxLabel').textContent = '$' + Math.round(state.yMax/1000) + 'K';
     document.getElementById('yMidLabel').textContent = '$' + Math.round(state.yMax/2000) + 'K';
@@ -504,20 +519,23 @@
       <line class="gridline" x1="0" y1="${H/2}" x2="${W}" y2="${H/2}"></line>
       <line class="gridline" x1="0" y1="0" x2="${W}" y2="0"></line>
       <path d="${areaPath}" fill="url(#areaGrad)" stroke="none"></path>
-      <path d="${prevPath}" fill="none" stroke="var(--blue-soft)" stroke-width="2.5" stroke-dasharray="1 7" stroke-linecap="round"></path>
+      <path d="${prevLineHidden ? '' : prevPath}" fill="none" stroke="var(--blue-soft)" stroke-width="2.5" stroke-dasharray="1 7" stroke-linecap="round"></path>
       <path d="${curPath}" fill="none" stroke="var(--blue)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path>
     `;
 
-    prevCoords.forEach((c,i)=>{
-      svgContent += `<g class="handle" data-series="previous" data-index="${i}">
-          <circle cx="${c.x}" cy="${c.y}" r="9" fill="transparent"></circle>
-          <circle cx="${c.x}" cy="${c.y}" r="3.5" fill="var(--blue-soft)" opacity="0.9"></circle>
-        </g>`;
-    });
+    const dotOpacity = dotsHidden ? 0 : 1;
+    if(!prevLineHidden){
+      prevCoords.forEach((c,i)=>{
+        svgContent += `<g class="handle" data-series="previous" data-index="${i}">
+            <circle cx="${c.x}" cy="${c.y}" r="9" fill="transparent"></circle>
+            <circle cx="${c.x}" cy="${c.y}" r="3.5" fill="var(--blue-soft)" opacity="${dotsHidden ? 0 : 0.9}"></circle>
+          </g>`;
+      });
+    }
     curCoords.forEach((c,i)=>{
       svgContent += `<g class="handle" data-series="current" data-index="${i}">
           <circle cx="${c.x}" cy="${c.y}" r="9" fill="transparent"></circle>
-          <circle cx="${c.x}" cy="${c.y}" r="4" fill="var(--blue)"></circle>
+          <circle cx="${c.x}" cy="${c.y}" r="4" fill="var(--blue)" opacity="${dotOpacity}"></circle>
         </g>`;
     });
 
@@ -581,14 +599,23 @@
     });
   });
 
-  // ---- % change stepper ----
+  // ---- % change direct input ----
   const changeLabelEl = document.getElementById('changeLabel');
+  const pctInput = document.getElementById('pctInput');
   changeLabelEl.addEventListener('click', (e)=>{
     if(e.target.closest('.stepper')) return;
+    pctInput.value = changePct;
     changeLabelEl.classList.add('editing');
+    pctInput.focus();
+    pctInput.select();
   });
-  document.getElementById('pctUp').addEventListener('click', (e)=>{ e.stopPropagation(); changePct += 1; render(); });
-  document.getElementById('pctDown').addEventListener('click', (e)=>{ e.stopPropagation(); changePct -= 1; render(); });
+  pctInput.addEventListener('input', ()=>{
+    const v = parseFloat(pctInput.value);
+    if(!isNaN(v)){ changePct = v; render(); pctInput.focus(); }
+  });
+  pctInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); changeLabelEl.classList.remove('editing'); }
+  });
   document.getElementById('pctDone').addEventListener('click', (e)=>{ e.stopPropagation(); changeLabelEl.classList.remove('editing'); });
 
   // ---- Scale presets ----
@@ -642,6 +669,11 @@
   document.getElementById('resetBtn').addEventListener('click', ()=>{
     state = JSON.parse(JSON.stringify(defaults));
     changePct = 42;
+    dotsHidden = false;
+    prevLineHidden = false;
+    document.getElementById('hideDotsBtn').textContent = '👁 Hide points';
+    document.getElementById('hideLineBtn').textContent = '📉 Hide second line';
+    document.getElementById('prevLegendSeg').style.display = 'flex';
     document.getElementById('titleText').textContent = 'Total sales';
     document.getElementById('bigNumber').textContent = '$250,000';
     document.getElementById('currentRangeLabel').textContent = 'Jun 6–Jul 5, 2023';
@@ -650,6 +682,19 @@
     document.querySelector('#scaleRow button[data-val="10000"]').classList.add('active');
     syncTextAreas();
     document.getElementById('inXLabels').value = defaults.xLabels.join(', ');
+    render();
+  });
+
+  document.getElementById('hideLineBtn').addEventListener('click', (e)=>{
+    prevLineHidden = !prevLineHidden;
+    e.target.textContent = prevLineHidden ? '📉 Show second line' : '📉 Hide second line';
+    document.getElementById('prevLegendSeg').style.display = prevLineHidden ? 'none' : 'flex';
+    render();
+  });
+
+  document.getElementById('hideDotsBtn').addEventListener('click', (e)=>{
+    dotsHidden = !dotsHidden;
+    e.target.textContent = dotsHidden ? '👁 Show points' : '👁 Hide points';
     render();
   });
 
