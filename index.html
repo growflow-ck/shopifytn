@@ -445,7 +445,7 @@
     display:flex;
     align-items:center;
     width:100%;
-    padding:16px 24px 0;
+    padding:28px 24px 0;
     font-size:13px;
     font-weight:600;
     color:var(--sub);
@@ -454,37 +454,45 @@
   .status-icons{ display:flex; align-items:center; gap:6px; margin-left:auto; color:var(--sub); }
   .dash-header{
     display:flex;
+    justify-content:center;
     align-items:center;
-    gap:10px;
-    padding:16px 24px 0;
+    padding:26px 24px 0;
     flex-shrink:0;
   }
   .dash-title{
-    font-size:15px;
-    font-weight:600;
+    font-size:24px;
+    font-weight:700;
     color:var(--ink);
     white-space:nowrap;
   }
-  .dash-numbers{ padding:8px 24px 14px; flex-shrink:0; }
+  .dash-numbers{
+    padding:14px 24px 22px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
   .ph-stat{
     display:flex;
-    align-items:baseline;
-    gap:10px;
-    flex-wrap:wrap;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
   }
   .ph-big-number{
-    font-size:64px;
+    font-size:72px;
     font-weight:800;
-    letter-spacing:-1.5px;
+    letter-spacing:-2px;
     color:var(--ink);
     line-height:1;
     display:block;
+    white-space:nowrap;
   }
   .sub-stat{
-    font-size:15px;
+    font-size:17px;
     font-weight:600;
     color:var(--sub);
-    margin-top:8px;
+    margin-top:12px;
     display:block;
   }
   .ph-change{
@@ -498,7 +506,6 @@
     user-select:none;
     border-radius:6px;
     padding:2px 6px;
-    margin-left:-6px;
   }
   .ph-change:hover{ background:#f4f7fa; }
   .ph-change.up{ color:var(--green-dark); }
@@ -687,19 +694,11 @@
 
       <div class="dash-header">
         <span class="dash-title editable" id="dashTitle" contenteditable="true">Total Sales</span>
-        <span class="dots"></span>
       </div>
 
       <div class="dash-numbers">
         <div class="ph-stat">
           <span class="ph-big-number editable" id="phBigNumber" contenteditable="true">$6,195</span>
-          <span class="ph-change up" id="phChangeLabel">
-            <span id="phChangeText">↗ 18%</span>
-            <span class="stepper">
-              <input type="number" id="phPctInput" value="18" step="1">
-              <button type="button" id="phPctDone">✓</button>
-            </span>
-          </span>
         </div>
         <span class="sub-stat editable" id="subStat" contenteditable="true">58 New Orders</span>
       </div>
@@ -1081,33 +1080,6 @@
   }
   phBigNumberEl.addEventListener('input', checkNegative);
   checkNegative();
-
-  // ---- % change badge (matches line chart's editable percentage) ----
-  let phChangePct = 18;
-  const phChangeLabelEl = document.getElementById('phChangeLabel');
-  const phPctInput = document.getElementById('phPctInput');
-  function renderPhChange(){
-    const up = phChangePct >= 0;
-    document.getElementById('phChangeText').textContent = (up ? '↗ ' : '↘ ') + Math.abs(phChangePct) + '%';
-    const wasEditing = phChangeLabelEl.classList.contains('editing');
-    phChangeLabelEl.className = 'ph-change ' + (up ? 'up' : 'down') + (wasEditing ? ' editing' : '');
-  }
-  phChangeLabelEl.addEventListener('click', (e)=>{
-    if(e.target.closest('.stepper')) return;
-    phPctInput.value = phChangePct;
-    phChangeLabelEl.classList.add('editing');
-    phPctInput.focus();
-    phPctInput.select();
-  });
-  phPctInput.addEventListener('input', ()=>{
-    const v = parseFloat(phPctInput.value);
-    if(!isNaN(v)){ phChangePct = v; renderPhChange(); phPctInput.focus(); }
-  });
-  phPctInput.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter'){ e.preventDefault(); phChangeLabelEl.classList.remove('editing'); }
-  });
-  document.getElementById('phPctDone').addEventListener('click', (e)=>{ e.stopPropagation(); phChangeLabelEl.classList.remove('editing'); });
-  renderPhChange();
 
   ['clockTime','dashTitle','phBigNumber','subStat'].forEach(id=>{
     const el = document.getElementById(id);
