@@ -17,6 +17,8 @@
     --line: #e8eaee;
     --card-bg: #ffffff;
     --page-bg: #eef1f5;
+    --green: #22c55e;
+    --green-dark: #16a34a;
   }
   *{box-sizing:border-box;}
   body{
@@ -175,7 +177,7 @@
     flex:1;
     position:relative;
   }
-  svg{width:100%;height:auto;display:block;overflow:visible;}
+  #chartSvg{width:100%;height:auto;display:block;overflow:visible;}
   .gridline{stroke:var(--line); stroke-width:1;}
   .handle{cursor:ns-resize; touch-action:none;}
 
@@ -390,10 +392,192 @@
     transition:transform .12s ease, box-shadow .12s ease;
   }
   .btn-primary:hover{ transform:translateY(-1px); }
+
+  /* ---------- VIEW SWITCHER ---------- */
+  .view-switch{
+    display:flex;
+    gap:4px;
+    background:#e7ebf1;
+    padding:4px;
+    border-radius:999px;
+  }
+  .view-switch button{
+    border:none;
+    background:transparent;
+    color:var(--sub);
+    font-size:13px;
+    font-weight:700;
+    padding:8px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .view-switch button.active{
+    background:#fff;
+    color:var(--ink);
+    box-shadow:0 2px 6px rgba(20,20,43,.12);
+  }
+  .view-panel{ display:none; flex-direction:column; align-items:center; gap:20px; width:100%; }
+  .view-panel.active{ display:flex; }
+
+  /* ---------- PHONE DASHBOARD VIEW ---------- */
+  .phone{
+    --bar-top: var(--green);
+    --bar-bottom: var(--green-dark);
+    width:100%;
+    max-width:380px;
+    aspect-ratio: 9 / 16.5;
+    background:var(--card-bg);
+    border-radius:28px;
+    box-shadow:0 1px 2px rgba(20,20,43,.04), 0 10px 30px rgba(20,20,43,.06);
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    border:1px solid #e3e8ef;
+  }
+  .phone.negative-mode{
+    --bar-top: #ef4444;
+    --bar-bottom: #b91c1c;
+  }
+  .phone.negative-mode .ph-big-number{ color:#dc2626; }
+  .status-bar{
+    display:flex;
+    align-items:center;
+    width:100%;
+    padding:16px 24px 0;
+    font-size:13px;
+    font-weight:600;
+    color:var(--sub);
+    flex-shrink:0;
+  }
+  .status-icons{ display:flex; align-items:center; gap:6px; margin-left:auto; color:var(--sub); }
+  .dash-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 24px 0;
+    flex-shrink:0;
+  }
+  .dash-title{
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .dash-numbers{ padding:8px 24px 14px; flex-shrink:0; }
+  .ph-stat{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .ph-big-number{
+    font-size:64px;
+    font-weight:800;
+    letter-spacing:-1.5px;
+    color:var(--ink);
+    line-height:1;
+    display:block;
+  }
+  .sub-stat{
+    font-size:15px;
+    font-weight:600;
+    color:var(--sub);
+    margin-top:8px;
+    display:block;
+  }
+  .ph-change{
+    font-size:15px;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    gap:2px;
+    margin-top:8px;
+    cursor:pointer;
+    user-select:none;
+    border-radius:6px;
+    padding:2px 6px;
+    margin-left:-6px;
+  }
+  .ph-change:hover{ background:#f4f7fa; }
+  .ph-change.up{ color:var(--green-dark); }
+  .ph-change.down{ color:#dc2626; }
+  .ph-change .stepper{
+    display:none;
+    align-items:center;
+    gap:4px;
+    font-size:13px;
+    margin-left:4px;
+  }
+  .ph-change.editing .stepper{ display:inline-flex; }
+  .ph-change .stepper input{
+    width:56px;
+    padding:3px 6px;
+    border:1px solid var(--blue-soft);
+    border-radius:6px;
+    font-size:13px;
+    font-weight:700;
+    font-family:inherit;
+    color:var(--ink);
+  }
+  .ph-change .stepper button{
+    width:20px;height:20px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:5px;
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .chart-zone{
+    flex:1;
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    padding:0 10px 0;
+    position:relative;
+    min-height:0;
+  }
+  .bar-wrap{
+    flex:1;
+    height:100%;
+    display:flex;
+    align-items:flex-end;
+    position:relative;
+    touch-action:none;
+  }
+  .bar{
+    width:100%;
+    background:linear-gradient(180deg, var(--bar-top) 0%, var(--bar-bottom) 100%);
+    border-radius:6px 6px 0 0;
+    cursor:ns-resize;
+    position:relative;
+    transition:filter .1s ease;
+  }
+  .bar:hover{ filter:brightness(1.08); }
+  .bar-wrap.show-handles .bar::before{
+    content:'';
+    position:absolute;
+    top:-5px; left:50%;
+    width:14px;height:14px;
+    transform:translateX(-50%);
+    background:#fff;
+    border:3px solid var(--bar-bottom);
+    border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);
+  }
 </style>
 </head>
 <body>
 
+  <div class="view-switch" id="viewSwitch">
+    <button class="active" data-view="lineChartView">📈 Line chart</button>
+    <button data-view="barChartView">📊 Bar dashboard</button>
+  </div>
+
+  <div class="view-panel active" id="lineChartView">
   <p class="page-hint"><span class="spark">✨</span> <span><b>Click any text</b> on the card to edit it, and <b>drag points</b> on the chart to reshape either line.</span></p>
 
   <div class="card">
@@ -484,6 +668,51 @@
 
     <div class="panel-actions">
       <button class="btn-secondary" id="resetBtn">Reset everything to default</button>
+    </div>
+  </div>
+  </div>
+
+  <div class="view-panel" id="barChartView">
+    <p class="page-hint">✨ <span><b>Click any text</b> to edit it, and <b>drag the top of any bar</b> to reshape the chart.</span></p>
+
+    <div class="phone">
+      <div class="status-bar">
+        <span id="clockTime" class="editable" contenteditable="true">12:03</span>
+        <span class="status-icons">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="3" width="3" height="9" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M1 4.5C4.5 1 11.5 1 15 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 7.2C6 4.9 10 4.9 12.5 7.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="10.3" r="1.2" fill="currentColor"/></svg>
+          <svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="17" height="8" rx="1.3" fill="currentColor"/><rect x="21.5" y="4" width="2" height="4" rx="1" fill="currentColor"/></svg>
+        </span>
+      </div>
+
+      <div class="dash-header">
+        <span class="dash-title editable" id="dashTitle" contenteditable="true">Total Sales</span>
+        <span class="dots"></span>
+      </div>
+
+      <div class="dash-numbers">
+        <div class="ph-stat">
+          <span class="ph-big-number editable" id="phBigNumber" contenteditable="true">$6,195</span>
+          <span class="ph-change up" id="phChangeLabel">
+            <span id="phChangeText">↗ 18%</span>
+            <span class="stepper">
+              <input type="number" id="phPctInput" value="18" step="1">
+              <button type="button" id="phPctDone">✓</button>
+            </span>
+          </span>
+        </div>
+        <span class="sub-stat editable" id="subStat" contenteditable="true">58 New Orders</span>
+      </div>
+
+      <div class="chart-zone" id="chartZone"></div>
+      <div class="drag-tip" id="phDragTip"></div>
+    </div>
+
+    <div class="chart-controls">
+      <button class="pill-btn" id="addBarBtn">＋ Add bar</button>
+      <button class="pill-btn" id="removeBarBtn">－ Remove bar</button>
+      <button class="pill-btn" id="randomBtn">🎲 Randomize</button>
+      <button class="pill-btn" id="handlesBtn">👁 Show handles</button>
     </div>
   </div>
 
@@ -761,6 +990,145 @@
 
   render();
 })();
+</script>
+
+<script>
+(function(){
+  let data = [1200, 2600, 1500, 900, 2100, 3600, 4200, 5600, 7200, 5800, 4900, 7200, 6800];
+  let showHandles = false;
+
+  const chartZone = document.getElementById('chartZone');
+  const dragTip = document.getElementById('phDragTip');
+
+  function render(){
+    chartZone.innerHTML = '';
+    const max = Math.max(...data, 1) * 1.08;
+    data.forEach((v, i)=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'bar-wrap' + (showHandles ? ' show-handles' : '');
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = (v / max * 100) + '%';
+      wrap.appendChild(bar);
+      chartZone.appendChild(wrap);
+
+      function startDrag(e){
+        e.preventDefault();
+        const rect = wrap.getBoundingClientRect();
+        function move(ev){
+          const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+          const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          let ratio = 1 - ((clientY - rect.top) / rect.height);
+          ratio = Math.max(0.02, Math.min(1, ratio));
+          const value = Math.round((ratio * max) / 10) * 10;
+          data[i] = value;
+          bar.style.height = Math.min(100, (value / max * 100)) + '%';
+
+          const phoneRect = chartZone.closest('.phone').getBoundingClientRect();
+          dragTip.style.display = 'block';
+          dragTip.style.left = (clientX - phoneRect.left) + 'px';
+          dragTip.style.top = (clientY - phoneRect.top) + 'px';
+          dragTip.textContent = '$' + value.toLocaleString();
+        }
+        function up(){
+          dragTip.style.display = 'none';
+          window.removeEventListener('mousemove', move);
+          window.removeEventListener('mouseup', up);
+          window.removeEventListener('touchmove', move);
+          window.removeEventListener('touchend', up);
+          render();
+        }
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+        window.addEventListener('touchmove', move, {passive:false});
+        window.addEventListener('touchend', up);
+      }
+      wrap.addEventListener('mousedown', startDrag);
+      wrap.addEventListener('touchstart', startDrag, {passive:false});
+    });
+  }
+
+  document.getElementById('addBarBtn').addEventListener('click', ()=>{
+    const avg = Math.round(data.reduce((a,b)=>a+b,0) / data.length);
+    data.push(avg);
+    render();
+  });
+  document.getElementById('removeBarBtn').addEventListener('click', ()=>{
+    if(data.length > 2) data.pop();
+    render();
+  });
+  document.getElementById('randomBtn').addEventListener('click', ()=>{
+    const max = Math.max(...data);
+    data = data.map(()=> Math.round((Math.random()*0.85+0.1) * max / 10) * 10);
+    render();
+  });
+  document.getElementById('handlesBtn').addEventListener('click', (e)=>{
+    showHandles = !showHandles;
+    e.target.textContent = showHandles ? '👁 Hide handles' : '👁 Show handles';
+    render();
+  });
+
+  const phoneEl = document.querySelector('#barChartView .phone');
+  const phBigNumberEl = document.getElementById('phBigNumber');
+  function checkNegative(){
+    const raw = phBigNumberEl.textContent.replace(/[^0-9.\-]/g, '');
+    const val = parseFloat(raw);
+    if(!isNaN(val) && val < 0){
+      phoneEl.classList.add('negative-mode');
+    } else {
+      phoneEl.classList.remove('negative-mode');
+    }
+  }
+  phBigNumberEl.addEventListener('input', checkNegative);
+  checkNegative();
+
+  // ---- % change badge (matches line chart's editable percentage) ----
+  let phChangePct = 18;
+  const phChangeLabelEl = document.getElementById('phChangeLabel');
+  const phPctInput = document.getElementById('phPctInput');
+  function renderPhChange(){
+    const up = phChangePct >= 0;
+    document.getElementById('phChangeText').textContent = (up ? '↗ ' : '↘ ') + Math.abs(phChangePct) + '%';
+    const wasEditing = phChangeLabelEl.classList.contains('editing');
+    phChangeLabelEl.className = 'ph-change ' + (up ? 'up' : 'down') + (wasEditing ? ' editing' : '');
+  }
+  phChangeLabelEl.addEventListener('click', (e)=>{
+    if(e.target.closest('.stepper')) return;
+    phPctInput.value = phChangePct;
+    phChangeLabelEl.classList.add('editing');
+    phPctInput.focus();
+    phPctInput.select();
+  });
+  phPctInput.addEventListener('input', ()=>{
+    const v = parseFloat(phPctInput.value);
+    if(!isNaN(v)){ phChangePct = v; renderPhChange(); phPctInput.focus(); }
+  });
+  phPctInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); phChangeLabelEl.classList.remove('editing'); }
+  });
+  document.getElementById('phPctDone').addEventListener('click', (e)=>{ e.stopPropagation(); phChangeLabelEl.classList.remove('editing'); });
+  renderPhChange();
+
+  ['clockTime','dashTitle','phBigNumber','subStat'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){ e.preventDefault(); el.blur(); }
+    });
+  });
+
+  render();
+})();
+</script>
+
+<script>
+  document.getElementById('viewSwitch').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    document.querySelectorAll('.view-switch button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById(btn.getAttribute('data-view')).classList.add('active');
+  });
 </script>
 
 </body>
